@@ -44,6 +44,6 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
         repository: akaytatsu/gocusign
-        context: ./src/Dockerfile
+        context: ./src
         push: true
         tags: latest, ${{ github.run_number }}

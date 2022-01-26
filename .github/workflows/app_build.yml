@@ -37,3 +37,9 @@ jobs:
 
 #     - name: Stop
 #       run: docker-compose -f docker-compose.yml -f docker-compose.tests.yml stop
+
+    - name: Push to https://hub.docker.com/r/akaytatsu/gocusign
+      run: |
+        docker build -t ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} -f Dockerfile ./src no-cache
+        docker push ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+        docker push ${{ env.IMAGE_NAME }}:latest

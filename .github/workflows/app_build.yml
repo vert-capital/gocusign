@@ -1,4 +1,4 @@
-name: Go
+name: App Build and deploy (dockerhub)
 
 on:
   push:

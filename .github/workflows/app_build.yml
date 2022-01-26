@@ -33,7 +33,7 @@ jobs:
         docker-compose -f docker-compose.yml -f docker-compose.tests.yml up -d --no-build
 
     - name: Run tests
-      run: docker-compose -f docker-compose.yml -f docker-compose.tests.yml exec app go test -v -bench=. ./... -timeout 30m
+      run: docker-compose -f docker-compose.yml -f docker-compose.tests.yml exec -T app go test -v -bench=. ./... -timeout 30m
 
     - name: Stop
       run: docker-compose -f docker-compose.yml -f docker-compose.tests.yml stop

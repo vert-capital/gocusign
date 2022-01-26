@@ -1,0 +1,13 @@
+version: "3.7"
+
+volumes:
+  data:
+
+services:
+  app:
+    build:
+      context: ./src
+      dockerfile: ./Dockerfile
+    env_file: ./src/.env
+    environment:
+      - ENV=prod

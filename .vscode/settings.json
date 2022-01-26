@@ -1,0 +1,7 @@
+{
+    "go.autocompleteUnimportedPackages": true,
+    "editor.formatOnSave": true,
+    "gopls": {
+        "experimentalWorkspaceModule": true,
+    },
+}

@@ -1,0 +1,14 @@
+FROM golang:1.17.5
+
+ARG PROJECT_NAME="app"
+ARG VERSION="dev"
+ARG COMMIT="none"
+ENV CGO_ENABLED=0
+ENV GOPROXY=https://proxy.golang.org
+
+COPY . /app/
+WORKDIR /app
+RUN go get github.com/pilu/fresh
+RUN go mod download
+
+CMD ["fresh"]

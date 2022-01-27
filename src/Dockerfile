@@ -6,8 +6,6 @@ ARG COMMIT="none"
 ENV CGO_ENABLED=0
 ENV GOPROXY=https://proxy.golang.org
 
-RUN pip install tqdm
-
 WORKDIR /app
 
 COPY . .

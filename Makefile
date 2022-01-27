@@ -2,7 +2,6 @@ SHELL:=/bin/bash
 ARGS = $(filter-out $@,$(MAKECMDGOALS))
 MAKEFLAGS += --silent
 BASE_PATH=${PWD}
-PYTHON_EXEC=python
 DOCKER_COMPOSE_FILE=$(shell echo -f docker-compose.yml -f docker-compose.override.yml)
 
 include src/.env

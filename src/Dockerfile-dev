@@ -11,4 +11,6 @@ WORKDIR /app
 RUN go get github.com/pilu/fresh
 RUN go mod download
 
+EXPOSE 8080
+
 CMD ["fresh"]

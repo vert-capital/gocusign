@@ -172,7 +172,8 @@ func GetEnvelopeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
-		log.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
@@ -208,6 +209,73 @@ func DownloadEnvelopeSigned(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, file.Name())
 }
 
+func ViewsCreateRecipient(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	envelopeID := vars["envelopeID"]
+
+	var recipient model.RecipientViewRequest
+
+	defer r.Body.Close()
+
+	body, err := ioutil.ReadAll(r.Body)
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	err = json.Unmarshal(body, &recipient)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Invalid JSON"))
+		return
+	}
+
+	urlReturn, err := docusign.DocusignConfig.ViewsCreateRecipient(envelopeID, recipient)
+	if err != nil {
+		json_resp, _ := json.Marshal(map[string]interface{}{"error_type": "docusign_request", "error": err.Error()})
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write(json_resp)
+		return
+	}
+
+	resp, err := json.Marshal(urlReturn)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Add("Content-Type", "application/json")
+	w.Write(resp)
+}
+
+func EnvelopeRecipients(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	envelopeID := vars["envelopeID"]
+
+	recipientsReturn, err := docusign.DocusignConfig.EnvelopeRecipients(envelopeID)
+	if err != nil {
+		json_resp, _ := json.Marshal(map[string]interface{}{"error_type": "docusign_request", "error": err.Error()})
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write(json_resp)
+		return
+	}
+
+	resp, err := json.Marshal(recipientsReturn)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Add("Content-Type", "application/json")
+	w.Write(resp)
+}
+
 func main() {
 
 	database.InitDatabase()
@@ -220,11 +288,12 @@ func main() {
 	r.HandleFunc("/", RootHandler)
 	r.HandleFunc("/consent", ConsentHandler).Methods("GET")
 	r.HandleFunc("/envelope/example_create", JsonCreateEnvelope).Methods("GET")
-	r.HandleFunc("/envelope/{envelopeID}/download", DownloadEnvelopeSigned).Methods("get")
-	r.HandleFunc("/envelope/{envelopeID}", GetEnvelopeHandler).Methods("get")
+	r.HandleFunc("/envelope/{envelopeID}/download", DownloadEnvelopeSigned).Methods("GET")
+	r.HandleFunc("/envelope/{envelopeID}", GetEnvelopeHandler).Methods("GET")
 	r.HandleFunc("/callback", CallbackHandler).Methods("POST")
 	r.HandleFunc("/envelope", CreateEnvelopeHandler).Methods("POST")
-
+	r.HandleFunc("/envelope/{envelopeID}/views/recipient", ViewsCreateRecipient).Methods("POST")
+	r.HandleFunc("/envelope/{envelopeID}/recipients", EnvelopeRecipients).Methods("GET")
 	// Bind to a port and pass our router in
 	log.Fatal(http.ListenAndServe(":8080", r))
 }

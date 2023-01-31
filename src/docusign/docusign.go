@@ -146,3 +146,60 @@ func (ds *DocusignConfigType) CreateEnvelop(envelopeDefinition *model.EnvelopeDe
 
 	return envSummary, nil
 }
+
+func (ds *DocusignConfigType) ViewsCreateRecipient(envelopeId string, recipient model.RecipientViewRequest) (urlReturn *model.ViewURL, err error) {
+
+	ctx := context.TODO()
+
+	cred, err := ds.getCredentials()
+
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	sv := envelopes.New(cred)
+
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	var envelopeRecipients = recipient
+	urlReturn, err = sv.ViewsCreateRecipient(envelopeId, &envelopeRecipients).Do(ctx)
+
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	return urlReturn, nil
+}
+
+func (ds *DocusignConfigType) EnvelopeRecipients(envelopeId string) (recipientsReturn *model.Recipients, err error) {
+
+	ctx := context.TODO()
+
+	cred, err := ds.getCredentials()
+
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	sv := envelopes.New(cred)
+
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	recipientsReturn, err = sv.RecipientsList(envelopeId).Do(ctx)
+
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	return recipientsReturn, nil
+}

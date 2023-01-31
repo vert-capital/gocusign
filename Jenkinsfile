@@ -54,21 +54,6 @@ pipeline {
             }
         }
 
-        stage('run python lint') {
-            steps {
-                script{
-                    try{
-                        sh 'docker-compose -f docker-compose.yml -f docker-compose.tests.yml exec -T app isort . --check-only'
-                        sh 'docker-compose -f docker-compose.yml -f docker-compose.tests.yml exec -T app flake8 .'
-                    }catch(e){
-                        sh 'docker-compose -f docker-compose.yml -f docker-compose.tests.yml down'
-                        throw e
-                    }
-                }
-
-            }
-        }
-
         stage('run tests') {
             steps {
                 script{

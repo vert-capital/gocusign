@@ -72,7 +72,7 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry("https://$registry", registryCredential) {
-                        dockerImageName = "gocusign-hml"
+                        dockerImageName = "msgocusign-hml"
                         dockerImage = docker.build(dockerImageName, "./src")
                         dockerImage.push("$BUILD_NUMBER")
                         dockerImage.push("latest")
@@ -96,7 +96,7 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry("https://$registry", registryCredential) {
-                        dockerImageName = "gocusign-prd"
+                        dockerImageName = "msgocusign-prd"
                         dockerImage = docker.build(dockerImageName, "./src")
                         dockerImage.push("$BUILD_NUMBER")
                         dockerImage.push("latest")

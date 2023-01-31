@@ -1,0 +1,49 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gocusign-hml-kafka
+  namespace: gocusign-hml
+  labels:
+    app: gocusign-hml-kafka
+spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 50%
+      maxUnavailable: 50%
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gocusign-hml-kafka
+  template:
+    metadata:
+      labels:
+        app: gocusign-hml-kafka
+    spec:
+      containers:
+      - name: gocusign-hml-kafka
+        image: 197272534240.dkr.ecr.us-east-1.amazonaws.com/gocusign-hml:{{BUILD_NUMBER}}
+        imagePullPolicy: Always
+        resources:
+          limits:
+            cpu: 200m
+            memory: 400Mi
+          requests:
+            cpu: 80m
+            memory: 150Mi
+        command: ["/bin/sh"]
+        args:
+          - -c
+          - >-
+              python manage.py kafka_consumer
+        envFrom:
+          - configMapRef:
+              name: gocusign-hml-config
+        volumeMounts:
+          - name: config
+            mountPath: /etc/localtime
+      volumes:
+        - name: config
+          hostPath:
+            path: /usr/share/zoneinfo/America/Sao_Paulo

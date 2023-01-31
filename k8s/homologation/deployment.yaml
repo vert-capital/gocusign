@@ -1,0 +1,51 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gocusign-hml-back
+  namespace: gocusign-hml
+  labels:
+    app: gocusign-hml-back
+spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 50%
+      maxUnavailable: 50%
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gocusign-hml-back
+  template:
+    metadata:
+      labels:
+        app: gocusign-hml-back
+    spec:
+      containers:
+      - name: gocusign-hml-back
+        image: 197272534240.dkr.ecr.us-east-1.amazonaws.com/gocusign-hml:{{BUILD_NUMBER}}
+        imagePullPolicy: Always
+        readinessProbe:
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          limits:
+            cpu: 200m
+            memory: 400Mi
+          requests:
+            cpu: 80m
+            memory: 150Mi
+        ports:
+        - containerPort: 8080
+        envFrom:
+          - configMapRef:
+              name: gocusign-hml-config
+        volumeMounts:
+          - name: config
+            mountPath: /etc/localtime
+      volumes:
+        - name: config
+          hostPath:
+            path: /usr/share/zoneinfo/America/Sao_Paulo

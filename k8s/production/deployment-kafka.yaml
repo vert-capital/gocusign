@@ -1,0 +1,49 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gocusign-prd-kafka
+  namespace: gocusign-prd
+  labels:
+    app: gocusign-prd-kafka
+spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 50%
+      maxUnavailable: 50%
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gocusign-prd-kafka
+  template:
+    metadata:
+      labels:
+        app: gocusign-prd-kafka
+    spec:
+      containers:
+      - name: gocusign-prd-kafka
+        image: 197272534240.dkr.ecr.us-east-1.amazonaws.com/gocusign-prd:{{BUILD_NUMBER}}
+        imagePullPolicy: Always
+        resources:
+          limits:
+            cpu: 200m
+            memory: 400Mi
+          requests:
+            cpu: 80m
+            memory: 150Mi
+        command: ["/bin/sh"]
+        args:
+          - -c
+          - >-
+              python manage.py kafka_consumer
+        envFrom:
+          - configMapRef:
+              name: gocusign-prd-config
+        volumeMounts:
+          - name: config
+            mountPath: /etc/localtime
+      volumes:
+        - name: config
+          hostPath:
+            path: /usr/share/zoneinfo/America/Sao_Paulo

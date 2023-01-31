@@ -2,10 +2,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: gocusign-prd-back
-  namespace: gocusign-prd
+  name: ms-gocusign-prd-back
+  namespace: ms-gocusign-prd
   labels:
-    app: gocusign-prd-back
+    app: ms-gocusign-prd-back
 spec:
   strategy:
     type: RollingUpdate
@@ -15,14 +15,14 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: gocusign-prd-back
+      app: ms-gocusign-prd-back
   template:
     metadata:
       labels:
-        app: gocusign-prd-back
+        app: ms-gocusign-prd-back
     spec:
       containers:
-      - name: gocusign-prd-back
+      - name: ms-gocusign-prd-back
         image: 197272534240.dkr.ecr.us-east-1.amazonaws.com/msgocusign-prd:{{BUILD_NUMBER}}
         imagePullPolicy: Always
         readinessProbe:
@@ -41,7 +41,7 @@ spec:
         - containerPort: 8080
         envFrom:
           - configMapRef:
-              name: gocusign-prd-config
+              name: ms-gocusign-prd-config
         volumeMounts:
           - name: config
             mountPath: /etc/localtime

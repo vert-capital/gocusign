@@ -4,6 +4,9 @@
 
 .env
 
+*.log
+*.pdf
+
 tmp/
 coverage.html
 

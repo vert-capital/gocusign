@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
       - name: gocusign-hml-back
-        image: 197272534240.dkr.ecr.us-east-1.amazonaws.com/gocusign-hml:{{BUILD_NUMBER}}
+        image: 197272534240.dkr.ecr.us-east-1.amazonaws.com/msgocusign-hml:{{BUILD_NUMBER}}
         imagePullPolicy: Always
         readinessProbe:
           tcpSocket:

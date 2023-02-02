@@ -60,6 +60,8 @@ func CreateEnvelopeHandler(w http.ResponseWriter, r *http.Request) {
 
 	envSummary, err := docusign.DocusignConfig.CreateEnvelop(&envelope)
 	if err != nil {
+		fmt.Println("error 004")
+		fmt.Println(err.Error())
 		json_resp, _ := json.Marshal(map[string]interface{}{"error_type": "docusign_request", "error": err.Error()})
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write(json_resp)
@@ -68,6 +70,8 @@ func CreateEnvelopeHandler(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := json.Marshal(envSummary)
 	if err != nil {
+		fmt.Println("error 005")
+		fmt.Println(err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
 		return

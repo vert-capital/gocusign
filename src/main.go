@@ -25,7 +25,11 @@ func CreateEnvelopeHandler(w http.ResponseWriter, r *http.Request) {
 
 	body, err := ioutil.ReadAll(r.Body)
 
+	fmt.Println(string(body))
+
 	if err != nil {
+		fmt.Println("error 001")
+		fmt.Println(err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
 		return
@@ -33,6 +37,8 @@ func CreateEnvelopeHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = json.Unmarshal(body, &envelope)
 	if err != nil {
+		fmt.Println("error 002")
+		fmt.Println(err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Invalid JSON"))
 		return
@@ -41,6 +47,7 @@ func CreateEnvelopeHandler(w http.ResponseWriter, r *http.Request) {
 	structureErrors, errBool := docusign.ValidEnvelopeCreate(&envelope)
 
 	if errBool {
+		fmt.Println("error 003")
 		jsonStructureErrors, _ := json.Marshal(structureErrors)
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(jsonStructureErrors))

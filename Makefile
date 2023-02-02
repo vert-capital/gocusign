@@ -69,4 +69,5 @@ test: show_env
 
 coverage: show_env
 	docker-compose ${DOCKER_COMPOSE_FILE} exec app go test -v -coverprofile=coverage.out ./...
+	# docker-compose ${DOCKER_COMPOSE_FILE} exec app go tool cover -func=coverage.out
 	docker-compose ${DOCKER_COMPOSE_FILE} exec app go tool cover -html=coverage.out -o coverage.html

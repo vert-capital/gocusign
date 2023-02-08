@@ -2,7 +2,6 @@ package response_callback
 
 import (
 	"app/database/models"
-	"log"
 	"os"
 	"strings"
 

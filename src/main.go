@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"app/database"
+	"app/response_callback"
 
 	dbModels "app/database/models"
 
@@ -19,7 +20,7 @@ import (
 
 func CreateEnvelopeHandler(w http.ResponseWriter, r *http.Request) {
 
-	var envelope model.EnvelopeDefinition
+	var envelope dbModels.GoCusignEnvelopeDefinition
 
 	defer r.Body.Close()
 
@@ -38,7 +39,7 @@ func CreateEnvelopeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	structureErrors, errBool := docusign.ValidEnvelopeCreate(&envelope)
+	structureErrors, errBool := docusign.ValidEnvelopeCreate(&envelope.EnvelopeDefinition)
 
 	if errBool {
 		jsonStructureErrors, _ := json.Marshal(structureErrors)
@@ -76,6 +77,8 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	var envelope model.EnvelopeDefinition
+	var envelopeData dbModels.Envelope
+	var envelopeDataGoCUsign dbModels.GoCusignEnvelopeDefinition
 
 	body, err := ioutil.ReadAll(r.Body)
 
@@ -95,6 +98,32 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 			Status:   envelope.Status,
 			JsonData: string(envelopeJson),
 		})
+
+		database.DB.Model(&dbModels.Envelope{}).Where("id = ?", envelope.EnvelopeID).First(&envelopeData)
+
+		json.Unmarshal([]byte(envelopeData.OriginalRequestData), &envelopeDataGoCUsign)
+
+		if envelopeDataGoCUsign.ResponseCallback.ResponseType != "" && envelope.Status == "completed" {
+
+			respCallback := response_callback.NewResponseCallback(envelopeDataGoCUsign.ResponseCallback.ResponseType)
+
+			file, err := docusign.DocusignConfig.DownloadEnvelopeSigned(envelope.EnvelopeID)
+
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			defer file.Close()
+
+			if respCallback != nil {
+				respCallback.SetParams(envelopeDataGoCUsign.ResponseCallback.ResponseMetaData)
+				respCallback.SetOriginalData(envelopeDataGoCUsign)
+				respCallback.SetEnvolepeData(envelope)
+				respCallback.SetFile(file)
+				respCallback.SendCallBack()
+			}
+		}
 	}
 
 	w.WriteHeader(http.StatusOK)

@@ -2,10 +2,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: gocusign-hml-back
-  namespace: gocusign-hml
+  name: ms-gocusign-hml-back
+  namespace: ms-gocusign-hml
   labels:
-    app: gocusign-hml-back
+    app: ms-gocusign-hml-back
 spec:
   strategy:
     type: RollingUpdate
@@ -15,15 +15,15 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: gocusign-hml-back
+      app: ms-gocusign-hml-back
   template:
     metadata:
       labels:
-        app: gocusign-hml-back
+        app: ms-gocusign-hml-back
     spec:
       containers:
-      - name: gocusign-hml-back
-        image: 197272534240.dkr.ecr.us-east-1.amazonaws.com/gocusign-hml:{{BUILD_NUMBER}}
+      - name: ms-gocusign-hml-back
+        image: 197272534240.dkr.ecr.us-east-1.amazonaws.com/msgocusign-hml:{{BUILD_NUMBER}}
         imagePullPolicy: Always
         readinessProbe:
           tcpSocket:
@@ -41,7 +41,7 @@ spec:
         - containerPort: 8080
         envFrom:
           - configMapRef:
-              name: gocusign-hml-config
+              name: ms-gocusign-hml-config
         volumeMounts:
           - name: config
             mountPath: /etc/localtime

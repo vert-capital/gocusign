@@ -108,7 +108,7 @@ func (ds *DocusignConfigType) DownloadEnvelopeSigned(envelopeID string, args ...
 	return file, nil
 }
 
-func (ds *DocusignConfigType) CreateEnvelop(envelopeDefinition *model.EnvelopeDefinition) (envSummary *model.EnvelopeSummary, err error) {
+func (ds *DocusignConfigType) CreateEnvelop(envelopeDefinition *dbModels.GoCusignEnvelopeDefinition) (envSummary *model.EnvelopeSummary, err error) {
 
 	ctx := context.TODO()
 
@@ -126,7 +126,7 @@ func (ds *DocusignConfigType) CreateEnvelop(envelopeDefinition *model.EnvelopeDe
 		return nil, err
 	}
 
-	envSummary, err = sv.Create(envelopeDefinition).Do(ctx)
+	envSummary, err = sv.Create(&envelopeDefinition.EnvelopeDefinition).Do(ctx)
 
 	if err != nil {
 		log.Println(err)
@@ -135,12 +135,14 @@ func (ds *DocusignConfigType) CreateEnvelop(envelopeDefinition *model.EnvelopeDe
 
 	if database.DB != nil {
 
-		envelopeJson, _ := json.Marshal(envelopeDefinition)
+		originalData, _ := json.Marshal(envelopeDefinition)
+		envelopeJson, _ := json.Marshal(envSummary)
 
 		database.DB.Create(&dbModels.Envelope{
-			ID:       envSummary.EnvelopeID,
-			Status:   envSummary.Status,
-			JsonData: string(envelopeJson),
+			ID:                  envSummary.EnvelopeID,
+			Status:              envSummary.Status,
+			OriginalRequestData: string(originalData),
+			JsonData:            string(envelopeJson),
 		})
 	}
 

@@ -90,7 +90,11 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	json.Unmarshal(body, &envelope)
 
+	log.Println("Callback document: " + envelope.EnvelopeID)
+
 	if database.DB != nil {
+
+		log.Println("has database")
 
 		envelopeJson, _ := json.Marshal(envelope)
 
@@ -103,9 +107,16 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 		json.Unmarshal([]byte(envelopeData.OriginalRequestData), &envelopeDataGoCUsign)
 
+		log.Println("status: " + envelope.Status)
+		log.Println("envelopeDataGoCUsign.ResponseCallback.ResponseType" + envelopeDataGoCUsign.ResponseCallback.ResponseType)
+
 		if envelopeDataGoCUsign.ResponseCallback.ResponseType != "" && envelope.Status == "completed" {
 
+			fmt.Println("inside callback")
+
 			respCallback := response_callback.NewResponseCallback(envelopeDataGoCUsign.ResponseCallback.ResponseType)
+
+			log.Println("downloading envelope signed")
 
 			file, err := docusign.DocusignConfig.DownloadEnvelopeSigned(envelope.EnvelopeID)
 
@@ -116,12 +127,21 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 			defer file.Close()
 
+			log.Println("respCallback: ", respCallback)
+
 			if respCallback != nil {
+
+				log.Println("sending to response")
+
 				respCallback.SetParams(envelopeDataGoCUsign.ResponseCallback.ResponseMetaData)
 				respCallback.SetOriginalData(envelopeDataGoCUsign)
 				respCallback.SetEnvolepeData(envelope)
 				respCallback.SetFile(file)
-				respCallback.SendCallBack()
+				err = respCallback.SendCallBack()
+
+				if err != nil{
+					log.Println("error: ", err)
+				}
 			}
 		}
 	}

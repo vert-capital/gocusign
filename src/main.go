@@ -34,10 +34,19 @@ func CreateEnvelopeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for key := range envelope.Documents {
+
+		log.Println(envelope.Documents[key].FileExtension)
+		log.Println(strings.Contains(envelope.Documents[key].FileExtension, "docx"))
+		log.Println(len(envelope.Documents[key].FileExtension))
+		log.Println(envelope.Documents[key].FileExtension != "" && strings.Contains(envelope.Documents[key].FileExtension, "docx") && len(envelope.Documents[key].FileExtension) > 4)
+
 		if envelope.Documents[key].FileExtension != "" &&
 			strings.Contains(envelope.Documents[key].FileExtension, "docx") &&
 			len(envelope.Documents[key].FileExtension) > 4 {
 			envelope.Documents[key].FileExtension = "docx"
+
+			log.Println("entrou aqui dentro: ", envelope.Documents[key].FileExtension)
+
 		}
 	}
 

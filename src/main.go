@@ -48,6 +48,14 @@ func CreateEnvelopeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Println("envelope: ", envelope)
+
+	for key := range envelope.Documents {
+		log.Println("envelope.Documents[key].Name: ", envelope.Documents[key].Name)
+		log.Println("envelope.Documents[key].FileExtension: ", envelope.Documents[key].FileExtension)
+		log.Println("envelope.Documents[key].DocumentID: ", envelope.Documents[key].DocumentID)
+	}
+
 	structureErrors, errBool := docusign.ValidEnvelopeCreate(&envelope.EnvelopeDefinition)
 
 	if errBool {

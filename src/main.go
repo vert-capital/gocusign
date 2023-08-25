@@ -33,6 +33,13 @@ func CreateEnvelopeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = json.Unmarshal(body, &envelope)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Invalid JSON"))
+		return
+	}
+
 	for key := range envelope.Documents {
 
 		log.Println(envelope.Documents[key].FileExtension)
@@ -49,15 +56,6 @@ func CreateEnvelopeHandler(w http.ResponseWriter, r *http.Request) {
 
 		}
 	}
-
-	err = json.Unmarshal(body, &envelope)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Invalid JSON"))
-		return
-	}
-
-	log.Println("envelope: ", envelope)
 
 	for key := range envelope.Documents {
 		log.Println("envelope.Documents[key].Name: ", envelope.Documents[key].Name)

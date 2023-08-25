@@ -48,7 +48,7 @@ func CreateEnvelopeHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println(envelope.Documents[key].FileExtension != "" && strings.Contains(envelope.Documents[key].FileExtension, "docx") && len(envelope.Documents[key].FileExtension) > 4)
 
 		if envelope.Documents[key].FileExtension != "" &&
-			strings.Contains(envelope.Documents[key].FileExtension, "docx") &&
+			(strings.Contains(envelope.Documents[key].FileExtension, "docx") || strings.Contains(envelope.Documents[key].Name, ".docx")) &&
 			len(envelope.Documents[key].FileExtension) > 4 {
 			envelope.Documents[key].FileExtension = "docx"
 

@@ -25,7 +25,7 @@ pipeline {
 
     agent {
         docker {
-            image "akaytatsu/cibuilder:1.2.17"
+            image "akaytatsu/cibuilder:latest"
         }
     }
 

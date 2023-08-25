@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 
 	"app/database"
 	"app/response_callback"
@@ -30,6 +31,14 @@ func CreateEnvelopeHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
 		return
+	}
+
+	for key := range envelope.Documents {
+		if envelope.Documents[key].FileExtension == "" &&
+			strings.Contains(envelope.Documents[key].FileExtension, "docx") &&
+			len(envelope.Documents[key].FileExtension) > 4 {
+			envelope.Documents[key].FileExtension = "docx"
+		}
 	}
 
 	err = json.Unmarshal(body, &envelope)
@@ -139,7 +148,7 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 				respCallback.SetFile(file)
 				err = respCallback.SendCallBack()
 
-				if err != nil{
+				if err != nil {
 					log.Println("error: ", err)
 				}
 			}

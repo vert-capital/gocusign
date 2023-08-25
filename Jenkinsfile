@@ -119,9 +119,9 @@ pipeline {
 
             steps {
                 script {
-                    withAWS(credentials:'aws_kube_homol', region: 'us-east-1') {
-                        withKubeConfig([credentialsId: 'k8s_config_vert_homol']) {
-                            sh "cat k8s/homologation/deployment.yaml | sed 's/{{BUILD_NUMBER}}/$BUILD_NUMBER/g' | kubectl apply -f -"
+                    withCredentials([string(credentialsId: "ARGOCD_SERVER", variable: 'ARGOCD_SERVER')]) {
+                        withCredentials([string(credentialsId: "argocd-homolog", variable: 'ARGOCD_AUTH_TOKEN')]) {
+                            sh "argocd --grpc-web app actions run ms-gocusign-hml restart --kind Deployment --all"
                         }
                     }
                 }
@@ -137,9 +137,9 @@ pipeline {
 
             steps {
                 script {
-                    withAWS(credentials:'aws_kube_homol', region: 'us-east-1') {
-                        withKubeConfig([credentialsId: 'k8s_config_vert_prod']) {
-                            sh "cat k8s/production/deployment.yaml | sed 's/{{BUILD_NUMBER}}/$BUILD_NUMBER/g' | kubectl apply -f -"
+                    withCredentials([string(credentialsId: "ARGOCD_SERVER", variable: 'ARGOCD_SERVER')]) {
+                        withCredentials([string(credentialsId: "argocd-production", variable: 'ARGOCD_AUTH_TOKEN')]) {
+                            sh "argocd --grpc-web app actions run ms-gocusign-prd restart --kind Deployment --all"
                         }
                     }
                 }

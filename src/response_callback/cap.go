@@ -121,7 +121,7 @@ func (cap *CapCallBack) GenerateXML() string {
 		<soap:Body>
 			<CompleteTask xmlns="http://iteris.cap.webservices">
 				<requestId>{{.TaskID}}</requestId>
-				<taskTitle>{{.TaskTitle}}</taskTitle>
+				<taskTitle>'{{.TaskTitle}}'</taskTitle>
 				<metadataValues>
 					<MetadataValue>
 						<Name>{{.FiledName}}</Name>

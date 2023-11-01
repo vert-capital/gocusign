@@ -119,10 +119,11 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 		log.Println("status: " + envelope.Status)
 		log.Println("envelopeDataGoCUsign.ResponseCallback.ResponseType" + envelopeDataGoCUsign.ResponseCallback.ResponseType)
+		log.Println("envelopeData.Sended" + fmt.Sprintf("%t", envelopeData.Sended))
 
-		if envelopeDataGoCUsign.ResponseCallback.ResponseType != "" && envelope.Status == "completed" {
+		if envelopeDataGoCUsign.ResponseCallback.ResponseType != "" && envelope.Status == "completed" && !envelopeData.Sended {
 
-			fmt.Println("inside callback")
+			log.Println("inside callback")
 
 			respCallback := response_callback.NewResponseCallback(envelopeDataGoCUsign.ResponseCallback.ResponseType)
 
@@ -151,6 +152,13 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 				if err != nil {
 					log.Println("error: ", err)
+				} else {
+					envelopeData.Sended = true
+					database.DB.Model(&dbModels.Envelope{}).Where("id = ?", envelope.EnvelopeID).Updates(dbModels.Envelope{
+						Sended: true,
+					})
+
+					log.Println("success")
 				}
 			}
 		}

@@ -58,7 +58,7 @@ func (cap *CapCallBack) makeRequest() error {
 	}
 
 	req.Header.Add("SOAPAction", "http://iteris.cap.webservices/CompleteTask")
-	req.Header.Add("Content-Type", "text/xml")
+	req.Header.Add("Content-Type", "text/xml; charset=utf-8")
 
 	req.SetBasicAuth(
 		os.Getenv("CAP_USERNAME"),

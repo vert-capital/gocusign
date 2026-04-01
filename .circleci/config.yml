@@ -1,132 +1,146 @@
 version: 2.1
 
+orbs:
+  aws-cli: circleci/aws-cli@5.4.1
+
 environment:
   CI: true
 
 jobs:
   build-and-test:
     docker:
-      - image: 197272534240.dkr.ecr.us-east-1.amazonaws.com/docker-vert:18.06.3-ce-git
-        environment:
-          DOCKER_REGISTRY: 197272534240.dkr.ecr.us-east-1.amazonaws.com
+      - image: akaytatsu/cibuilder:latest
     working_directory: ~/gocusign/
     steps:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
-          name: Login to AWS ECR
-          command: |
-            login="$(aws ecr get-login --no-include-email)"
-            ${login}
-      - run:
-          name: Build Docker Images
+          name: Build and Test
           command: |
             cp -f src/.env.sample src/.env
             docker-compose -f docker-compose.yml -f docker-compose.tests.yml down
             docker-compose -f docker-compose.yml -f docker-compose.tests.yml build
             docker-compose -f docker-compose.yml -f docker-compose.tests.yml up -d --no-build
       - run:
-          name: Stop Containers
+          name: Cleanup Containers
           command: |
             docker-compose -f docker-compose.yml -f docker-compose.tests.yml down
           when: always
 
   build-deliver:
     docker:
-      - image: 197272534240.dkr.ecr.us-east-1.amazonaws.com/docker-vert:18.06.3-ce-git
-        environment:
-          DOCKER_REGISTRY: 197272534240.dkr.ecr.us-east-1.amazonaws.com
+      - image: akaytatsu/cibuilder:latest
     working_directory: ~/gocusign/
     steps:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
+
+      # Assume Role via OIDC
+      - aws-cli/setup:
+          role_arn: "${AWS_ROLE_ARN}"
+          region: "${AWS_REGION}"
+          profile_name: oidc
+
+      # Debug
       - run:
-          name: Login to AWS ECR
+          name: Verify AWS identity
           command: |
-            login="$(aws ecr get-login --no-include-email)"
-            ${login}
+            echo "Region: $AWS_REGION"
+            echo "Role: $AWS_ROLE_ARN"
+            aws --profile oidc sts get-caller-identity
+
+      # Login no ECR
+      - run:
+          name: Login to ECR
+          command: |
+            DOCKER_REGISTRY=197272534240.dkr.ecr.$AWS_REGION.amazonaws.com
+
+            aws --profile oidc ecr get-login-password --region $AWS_REGION \
+              | docker login --username AWS --password-stdin $DOCKER_REGISTRY
+
+      # Build e Push
       - run:
           name: Build Docker Image
           command: |
-            cp -f src/.env.sample src/.env
-            docker build -t msgocusign ./src
+            DOCKER_REGISTRY=197272534240.dkr.ecr.$AWS_REGION.amazonaws.com
+            BUILD_VERSION=$(echo "$CIRCLE_SHA1" | cut -c 1-8)
+
+            docker build -t msgocusign:"$BUILD_VERSION" ./src
+
       - run:
-          name: Push to ECR - Homolog (develop)
+          name: Deliver to ECR - Homolog (develop)
           command: |
-            if [ "$CIRCLE_BRANCH" = "develop" ]
-            then
-                docker tag msgocusign "$DOCKER_REGISTRY"/msgocusign-hml:"$CIRCLE_BUILD_NUM"
-                docker tag msgocusign "$DOCKER_REGISTRY"/msgocusign-hml:latest
-                docker push "$DOCKER_REGISTRY"/msgocusign-hml:"$CIRCLE_BUILD_NUM"
-                docker push "$DOCKER_REGISTRY"/msgocusign-hml:latest
-                docker rmi "$DOCKER_REGISTRY"/msgocusign-hml:"$CIRCLE_BUILD_NUM"
-                docker rmi "$DOCKER_REGISTRY"/msgocusign-hml:latest
+            DOCKER_REGISTRY=197272534240.dkr.ecr.$AWS_REGION.amazonaws.com
+            BUILD_VERSION=$(echo "$CIRCLE_SHA1" | cut -c 1-8)
+
+            if [ "$CIRCLE_BRANCH" = "develop" ]; then
+              docker tag msgocusign:"$BUILD_VERSION" "$DOCKER_REGISTRY"/msgocusign-hml:"$BUILD_VERSION"
+              docker tag msgocusign:"$BUILD_VERSION" "$DOCKER_REGISTRY"/msgocusign-hml:latest
+              docker push "$DOCKER_REGISTRY"/msgocusign-hml:"$BUILD_VERSION"
+              docker push "$DOCKER_REGISTRY"/msgocusign-hml:latest
+              docker rmi "$DOCKER_REGISTRY"/msgocusign-hml:"$BUILD_VERSION" || true
+              docker rmi "$DOCKER_REGISTRY"/msgocusign-hml:latest || true
             fi
+
       - run:
-          name: Push to ECR - Production (master)
+          name: Deliver to ECR - Production (master)
           command: |
-            if [ "$CIRCLE_BRANCH" = "master" ]
-            then
-                docker tag msgocusign "$DOCKER_REGISTRY"/msgocusign-prd:"$CIRCLE_BUILD_NUM"
-                docker tag msgocusign "$DOCKER_REGISTRY"/msgocusign-prd:latest
-                docker push "$DOCKER_REGISTRY"/msgocusign-prd:"$CIRCLE_BUILD_NUM"
-                docker push "$DOCKER_REGISTRY"/msgocusign-prd:latest
-                docker rmi "$DOCKER_REGISTRY"/msgocusign-prd:"$CIRCLE_BUILD_NUM"
-                docker rmi "$DOCKER_REGISTRY"/msgocusign-prd:latest
+            DOCKER_REGISTRY=197272534240.dkr.ecr.$AWS_REGION.amazonaws.com
+            BUILD_VERSION=$(echo "$CIRCLE_SHA1" | cut -c 1-8)
+
+            if [ "$CIRCLE_BRANCH" = "master" ]; then
+              docker tag msgocusign:"$BUILD_VERSION" "$DOCKER_REGISTRY"/msgocusign-prd:"$BUILD_VERSION"
+              docker tag msgocusign:"$BUILD_VERSION" "$DOCKER_REGISTRY"/msgocusign-prd:latest
+              docker push "$DOCKER_REGISTRY"/msgocusign-prd:"$BUILD_VERSION"
+              docker push "$DOCKER_REGISTRY"/msgocusign-prd:latest
+              docker rmi "$DOCKER_REGISTRY"/msgocusign-prd:"$BUILD_VERSION" || true
+              docker rmi "$DOCKER_REGISTRY"/msgocusign-prd:latest || true
             fi
 
   deploy-to-staging:
     docker:
-      - image: 197272534240.dkr.ecr.us-east-1.amazonaws.com/docker-vert:18.06.3-ce-git
-        environment:
-          DOCKER_REGISTRY: 197272534240.dkr.ecr.us-east-1.amazonaws.com
-    working_directory: ~/gocusign/
+      - image: akaytatsu/cibuilder:latest
     steps:
       - checkout:
           depth: 1
       - run:
           name: Install ArgoCD CLI
           command: |
-            curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
-            install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
-            rm argocd-linux-amd64
+            curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+            install -m 555 argocd /usr/local/bin/argocd
+            rm argocd
       - run:
           name: Deploy to Homolog Environment (develop)
           command: |
             export ARGOCD_SERVER="$ARGOCD_SERVER"
-            export ARGOCD_AUTH_TOKEN="$ARGOCD_AUTH_TOKEN_HOMOLOG"
+            export ARGOCD_AUTH_TOKEN="$ARGOCD_AUTH_TOKEN"
 
-            if [ "$CIRCLE_BRANCH" = "develop" ]
-            then
-                argocd --grpc-web app actions run ms-gocusign-hml restart --kind Deployment --all
+            if [ "$CIRCLE_BRANCH" = "develop" ]; then
+              argocd --grpc-web app actions run ms-gocusign-hml restart --kind Deployment --all
             fi
 
   deploy-to-production:
     docker:
-      - image: 197272534240.dkr.ecr.us-east-1.amazonaws.com/docker-vert:18.06.3-ce-git
-        environment:
-          DOCKER_REGISTRY: 197272534240.dkr.ecr.us-east-1.amazonaws.com
-    working_directory: ~/gocusign/
+      - image: akaytatsu/cibuilder:latest
     steps:
       - checkout:
           depth: 1
       - run:
           name: Install ArgoCD CLI
           command: |
-            curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
-            install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
-            rm argocd-linux-amd64
+            curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+            install -m 555 argocd /usr/local/bin/argocd
+            rm argocd
       - run:
           name: Deploy to Production Environment (master)
           command: |
             export ARGOCD_SERVER="$ARGOCD_SERVER"
-            export ARGOCD_AUTH_TOKEN="$ARGOCD_AUTH_TOKEN_PRODUCTION"
+            export ARGOCD_AUTH_TOKEN="$ARGOCD_AUTH_TOKEN"
 
-            if [ "$CIRCLE_BRANCH" = "master" ]
-            then
-                argocd --grpc-web app actions run ms-gocusign-prd restart --kind Deployment --all
+            if [ "$CIRCLE_BRANCH" = "master" ]; then
+              argocd --grpc-web app actions run ms-gocusign-prd restart --kind Deployment --all
             fi
 
 workflows:

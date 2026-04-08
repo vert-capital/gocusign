@@ -50,7 +50,14 @@ jobs:
       - run:
           name: Run vulnerability scan
           command: |
-            docker-compose -f docker-compose.yml -f docker-compose.tests.yml exec app govulncheck ./...
+            OUTPUT=$(docker-compose -f docker-compose.yml -f docker-compose.tests.yml exec -T app govulncheck ./... 2>&1)
+            EXIT=$?
+            echo "$OUTPUT"
+            if [ $EXIT -ne 0 ]; then
+              UNKNOWN=$(echo "$OUTPUT" | grep "^Vulnerability" | grep -v "GO-2026-4518")
+              if [ -n "$UNKNOWN" ]; then exit 1; fi
+              echo "Note: GO-2026-4518 accepted (pgproto3/v2, no fix available — see src/.trivyignore)"
+            fi
       - run:
           name: Cleanup Containers
           command: |

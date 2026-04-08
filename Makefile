@@ -71,3 +71,17 @@ coverage: show_env
 	docker-compose ${DOCKER_COMPOSE_FILE} exec app go test -v -coverprofile=coverage.out ./...
 	# docker-compose ${DOCKER_COMPOSE_FILE} exec app go tool cover -func=coverage.out
 	docker-compose ${DOCKER_COMPOSE_FILE} exec app go tool cover -html=coverage.out -o coverage.html
+
+security-scan:
+	@echo "==> Trivy: filesystem scan (vuln, misconfig, secret)"
+	trivy fs --exit-code 1 --severity HIGH,CRITICAL,MEDIUM --scanners vuln,misconfig,secret --format table --ignorefile ./src/.trivyignore ./src
+	@echo "==> govulncheck: Go vulnerability scan (binary mode)"
+	cd src && GOTOOLCHAIN=go1.25.9 go build -o /tmp/gocusign_scan_bin . && \
+	PATH="$$PATH:$$(go env GOPATH)/bin" GOTOOLCHAIN=go1.25.9 bash -c '\
+	  OUTPUT=$$(govulncheck -mode=binary /tmp/gocusign_scan_bin 2>&1); \
+	  EXIT=$$?; rm -f /tmp/gocusign_scan_bin; echo "$$OUTPUT"; \
+	  if [ $$EXIT -ne 0 ]; then \
+	    UNKNOWN=$$(echo "$$OUTPUT" | grep "^Vulnerability" | grep -v "GO-2026-4518"); \
+	    [ -n "$$UNKNOWN" ] && exit 1; \
+	    echo "Note: GO-2026-4518 accepted (pgproto3/v2, no fix available — see src/.trivyignore)"; \
+	  fi'

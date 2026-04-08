@@ -1,4 +1,4 @@
-FROM golang:1.17.5
+FROM golang:1.25.9-bookworm
 
 ARG PROJECT_NAME="app"
 ARG VERSION="dev"
@@ -8,8 +8,10 @@ ENV GOPROXY=https://proxy.golang.org
 
 COPY . /app/
 WORKDIR /app
-RUN go get github.com/pilu/fresh
-RUN go mod download
+
+RUN go install github.com/pilu/fresh@latest && \
+    go install golang.org/x/vuln/cmd/govulncheck@latest && \
+    go mod download
 
 EXPOSE 8080
 

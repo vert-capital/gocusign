@@ -22,7 +22,7 @@ jobs:
       - run:
           name: Trivy - Filesystem scan
           command: |
-            trivy fs --exit-code 1 --severity HIGH,CRITICAL,MEDIUM --scanners vuln,misconfig,secret --format table ./src
+            trivy fs --exit-code 1 --severity HIGH,CRITICAL,MEDIUM --scanners vuln,misconfig,secret --format table --ignorefile ./src/.trivyignore ./src
       - run:
           name: Build production image for scan
           command: |

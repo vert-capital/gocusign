@@ -50,8 +50,10 @@ jobs:
       - run:
           name: Run vulnerability scan
           command: |
+            set +e
             OUTPUT=$(docker-compose -f docker-compose.yml -f docker-compose.tests.yml exec -T app govulncheck ./... 2>&1)
             EXIT=$?
+            set -e
             echo "$OUTPUT"
             if [ $EXIT -ne 0 ]; then
               UNKNOWN=$(echo "$OUTPUT" | grep "^Vulnerability" | grep -v "GO-2026-4518")

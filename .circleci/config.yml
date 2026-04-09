@@ -56,8 +56,14 @@ jobs:
             set -e
             echo "$OUTPUT"
             if [ $EXIT -ne 0 ]; then
-              UNKNOWN=$(echo "$OUTPUT" | grep -oE "GO-[0-9]+-[0-9]+" | grep -v "GO-2026-4518")
-              if [ -n "$UNKNOWN" ]; then exit 1; fi
+              ACCEPTED="GO-2026-4518"
+              UNKNOWN=$(echo "$OUTPUT" | grep -oE "GO-[0-9]+-[0-9]+" | sort -u | while read ID; do
+                echo "$ACCEPTED" | grep -qF "$ID" || echo "$ID"
+              done)
+              if [ -n "$UNKNOWN" ]; then
+                echo "Unaccepted vulnerabilities found: $UNKNOWN"
+                exit 1
+              fi
               echo "Note: GO-2026-4518 accepted (pgproto3/v2, no fix available — see src/.trivyignore)"
             fi
       - run:

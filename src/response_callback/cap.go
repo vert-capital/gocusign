@@ -78,7 +78,6 @@ func (cap *CapCallBack) makeRequest() error {
 
 }
 
-
 func (cap *CapCallBack) SendCallBack() error {
 
 	cap.parseMetaData()

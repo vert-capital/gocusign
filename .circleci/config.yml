@@ -7,6 +7,31 @@ environment:
   CI: true
 
 jobs:
+  scan-audit:
+    docker:
+      - image: ghcr.io/aquasecurity/trivy:0.69.3
+    working_directory: ~/gocusign/
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: Install Docker CLI
+          command: |
+            apk add --no-cache docker-cli
+      - run:
+          name: Trivy - Filesystem scan
+          command: |
+            trivy fs --exit-code 1 --severity HIGH,CRITICAL,MEDIUM --scanners vuln,misconfig,secret --format table --ignorefile ./src/.trivyignore ./src
+      - run:
+          name: Build production image for scan
+          command: |
+            docker build -t ${CIRCLE_PROJECT_REPONAME}:${CIRCLE_SHA1} ./src
+      - run:
+          name: Trivy - Image scan
+          command: |
+            trivy image --exit-code 1 --severity HIGH,CRITICAL,MEDIUM --scanners vuln --format table --ignorefile ./src/.trivyignore ${CIRCLE_PROJECT_REPONAME}:${CIRCLE_SHA1}
+
   build-and-test:
     docker:
       - image: akaytatsu/cibuilder:latest
@@ -147,12 +172,16 @@ workflows:
   version: 2.1
   integration:
     jobs:
+      - scan-audit:
+          context: environment
+
       - build-and-test:
           context: environment
 
       - build-deliver:
           context: environment
           requires:
+            - scan-audit
             - build-and-test
           filters:
             branches:

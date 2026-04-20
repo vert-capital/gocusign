@@ -1,0 +1,7 @@
+# Trivy ignore file
+# Add CVE IDs or file paths to suppress false positives
+
+# CVE-2026-32286: github.com/jackc/pgproto3/v2 - DoS via malicious PostgreSQL server
+# Status: no fix available upstream. Dependency pulled indirectly by gorm/pgx v4.
+# Risk is low in this context: we only connect to our own controlled PostgreSQL server.
+CVE-2026-32286

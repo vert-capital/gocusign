@@ -71,3 +71,13 @@ coverage: show_env
 	docker-compose ${DOCKER_COMPOSE_FILE} exec app go test -v -coverprofile=coverage.out ./...
 	# docker-compose ${DOCKER_COMPOSE_FILE} exec app go tool cover -func=coverage.out
 	docker-compose ${DOCKER_COMPOSE_FILE} exec app go tool cover -html=coverage.out -o coverage.html
+
+security-scan:
+	@echo "==> Trivy: filesystem scan"
+	trivy fs --severity HIGH,CRITICAL,MEDIUM --scanners vuln,misconfig,secret --format table --ignorefile src/.trivyignore ./src
+	@echo "==> Building image for scan"
+	docker build -t gocusign:security-scan ./src
+	@echo "==> Trivy: image scan"
+	trivy image --severity HIGH,CRITICAL,MEDIUM --scanners vuln --format table --ignorefile src/.trivyignore gocusign:security-scan
+	@echo "==> Cleanup"
+	docker rmi gocusign:security-scan || true

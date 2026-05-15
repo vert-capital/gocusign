@@ -7,12 +7,25 @@ environment:
   CI: true
 
 jobs:
+  secure-checkout:
+    circleci_ip_ranges: true
+    docker:
+      - image: akaytatsu/cibuilder:latest
+    working_directory: ~/gocusign/
+    steps:
+      - checkout
+      - persist_to_workspace:
+          root: ~/gocusign
+          paths:
+            - .
+
   scan-audit:
     docker:
       - image: ghcr.io/aquasecurity/trivy:0.69.3
     working_directory: ~/gocusign/
     steps:
-      - checkout
+      - attach_workspace:
+          at: ~/gocusign
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
@@ -37,7 +50,8 @@ jobs:
       - image: akaytatsu/cibuilder:latest
     working_directory: ~/gocusign/
     steps:
-      - checkout
+      - attach_workspace:
+          at: ~/gocusign
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
@@ -58,7 +72,8 @@ jobs:
       - image: akaytatsu/cibuilder:latest
     working_directory: ~/gocusign/
     steps:
-      - checkout
+      - attach_workspace:
+          at: ~/gocusign
       - setup_remote_docker:
           docker_layer_caching: true
 
@@ -125,6 +140,7 @@ jobs:
             fi
 
   deploy-to-staging:
+    circleci_ip_ranges: true
     docker:
       - image: akaytatsu/cibuilder:latest
     steps:
@@ -147,6 +163,7 @@ jobs:
             fi
 
   deploy-to-production:
+    circleci_ip_ranges: true
     docker:
       - image: akaytatsu/cibuilder:latest
     steps:
@@ -172,11 +189,18 @@ workflows:
   version: 2.1
   integration:
     jobs:
+      - secure-checkout:
+          context: environment
+
       - scan-audit:
           context: environment
+          requires:
+            - secure-checkout
 
       - build-and-test:
           context: environment
+          requires:
+            - secure-checkout
 
       - build-deliver:
           context: environment

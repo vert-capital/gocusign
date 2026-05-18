@@ -1,7 +1,7 @@
 # ============================================================================
 # STAGE 1: Builder
 # ============================================================================
-FROM golang:1.25.9-bookworm AS builder
+FROM golang:1.25.10-bookworm AS builder
 
 ARG PROJECT_NAME="app"
 ARG VERSION="dev"
